@@ -60,8 +60,9 @@
             <v-list-item
                 v-for="(item, i) in selected" :key="i">
                 <v-list-item-content>
-                    <v-list-item-title>
-                    • {{item.task}}</v-list-item-title>
+                    <v-card-title>
+                    • {{item.task}}
+                    </v-card-title>
                 </v-list-item-content>
             </v-list-item>
             <v-btn color="red" dark @click="deleteSelected">
