@@ -1,6 +1,6 @@
 <template>
     <v-main class="list">
-        <h3 class="text-h3 font-weight-medium mb-5">To Do List UGD</h3>
+        <h3 class="text-h3 font-weight-medium mb-5">To Do List Tugas</h3>
 
         <v-card>
             <v-card-title>
@@ -25,25 +25,48 @@
                 :search="search">
 
                 <template v-slot:[`item.priority`]="{ item }">
-                    <v-card v-if="item.priority == 'Penting'" style="border-color:lightcoral; color:red; width:fit-content;" outlined>
-                        {{ item.priority}}
-                    </v-card>
-                    <v-card v-else-if="item.priority == 'Biasa'" style="border-color:lightblue; color:blue; width:fit-content;" outlined>
-                        {{ item.priority}}
-                    </v-card>
-                    <v-card v-else style="border-color:lightgreen; color:green; width:fit-content;" outlined>
-                        {{ item.priority}}
-                    </v-card>
+                    <td>
+                        <v-card v-if="item.priority == 'Penting'" style="border-color: #c0392b; color: #c0392b; padding: 5px;" outlined>
+                            {{ item.priority }}
+                        </v-card>
+                        <v-card v-else-if="item.priority == 'Biasa'" style="border-color: #2980b9; color: #2980b9; padding: 5px;" outlined>
+                            {{ item.priority }}
+                        </v-card>
+                        <v-card v-else outlined style="border-color: #008a00; color: #008a00; padding: 5px;">
+                            {{ item.priority }}
+                        </v-card>
+                    </td>
                 </template>
 
                 <template v-slot:[`item.actions`]="{ item }">
 
-                    <v-btn small @click="detailItem(item)">Detail</v-btn>
-                    <v-btn small @click="editItem(item)">Edit</v-btn>
-                    <v-btn small @click="deleteItem(item)">Delete</v-btn>
+                    <v-icon small class="icnote mr-2" @click="detailItem(item)">{{ icons.mdiTextBoxSearchOutline}}</v-icon>
+                    <v-icon small class="pencil mr-2" @click="editItem(item)">{{ icons.mdiPencil }}</v-icon>
+                    <v-icon small class="bin mr-2" @click="deleteItem(item)"> {{ icons.mdiDelete }}</v-icon>
 
                 </template>
+
+                <template v-slot:[`item.select`]="{ item }">
+                    <v-checkbox multiple :key="item" @click.capture.stop="toggleSelect(item)"/>
+                </template>
+
             </v-data-table>
+        </v-card>
+
+        <v-card v-if="selected.length" style="margin-top: 30px; padding: 20px;">
+            <v-card-title>
+                <h4>Delete Multiple:</h4>
+            </v-card-title>
+            <v-list-item
+                v-for="(item, i) in selected" :key="i">
+                <v-list-item-content>
+                    <v-list-item-title>
+                    • {{item.task}}</v-list-item-title>
+                </v-list-item-content>
+            </v-list-item>
+            <v-btn color="red" dark @click="deleteSelected">
+                Hapus semua
+            </v-btn>
         </v-card>
 
         <v-dialog v-model="dialog" persistent max-width="600px">
@@ -107,7 +130,6 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
-
                     
         <v-dialog v-model="dialogdel" persistent max-width="400px">
             <v-card>
@@ -132,8 +154,7 @@
 
             </v-card>
         </v-dialog>
-
-                    
+  
         <v-dialog v-model="dialognote" persistent max-width="400px">
             <v-card>
                 <v-card-title>
@@ -144,19 +165,17 @@
                 
                 <v-card-text>
                     <v-container>
-
-                        <v-card v-if="detail.priority == 'Penting'" style="border-color:lightcoral; color:red; width:fit-content;" outlined>
-                        {{ detail.priority}}
+                        <v-card v-if="detail.priority == 'Penting'" style="border-color: lightcoral; color: lightcoral; width: fit-content; padding: 2px 7px 2px 7px;" outlined>
+                            {{detail.priority}}
                         </v-card>
-                        <v-card v-else-if="detail.priority == 'Biasa'" style="border-color:lightblue; color:blue; width:fit-content;" outlined>
-                            {{ detail.priority}}
+                        <v-card v-else-if="detail.priority == 'Biasa'" style="border-color: lightblue; color: lightblue; width: fit-content; padding: 2px 7px 2px 7px;" outlined>
+                            {{detail.priority}}
                         </v-card>
-                        <v-card v-else style="border-color:lightgreen; color:green; width:fit-content;" outlined>
-                            {{ detail.priority}}
+                        <v-card v-else outlined style="border-color: lightgreen; color: lightgreen; width: fit-content; padding: 2px 7px 2px 7px;">
+                            {{detail.priority}}
                         </v-card>
-                        <v-card>
-                            {{detail.note}}
-                        </v-card>
+                        <br>
+                        {{detail.note}}
                     </v-container>
                 </v-card-text>
 
@@ -166,13 +185,17 @@
                         Close
                     </v-btn>
                 </v-card-actions>
-
             </v-card>
         </v-dialog>
-
     </v-main>
 </template>
 <script>
+
+import {
+    mdiPencil,
+    mdiDelete,
+    mdiTextBoxSearchOutline,
+} from '@mdi/js'
 
 export default {
     name: "List",
@@ -185,6 +208,13 @@ export default {
             dialog: false,
             dialogdel: false,
             dialognote: false,
+            selected: [],
+    
+            icons: {
+                mdiPencil,
+                mdiDelete,
+                mdiTextBoxSearchOutline,
+            },
 
             filters: {
                 search: '',
@@ -209,6 +239,11 @@ export default {
                     value: "actions", 
                     sortable: false,
                 },
+                {
+                    text: " ",
+                    value: "select",
+                    sortable: false,
+                }
             ],
 
             todos: [
@@ -302,6 +337,29 @@ export default {
                 note: null,
             };
         },
+
+        toggleSelect(item) {
+            if(this.selected.includes(item)) {
+                this.selected.splice(this.selected.indexOf(item), 1);
+            } else {
+                this.selected.push(item);
+            }
+        },
+
+        deleteSelected () {
+            for(var i = 0; i < this.selected.length; i++){
+                const index = this.todos.indexOf(this.selected[i]);
+                this.todos.splice(index, 1);
+            }
+            this.selected=[];
+            toggleSelect(this.todos);
+        },
     },
 };
 </script>
+
+<style scoped>
+.icnote{color: #9b59b6 !important;}
+.pencil{color: #0050ef !important;}
+.bin{color: #c0392b !important;}
+</style>
